@@ -68,6 +68,12 @@ kconfig-lsp
 | Literals | `"double quoted"` `'single quoted'` |
 | Macros | `$(cc-option,...)` `$(success,...)` |
 
+## Configuration
+
+| option | type | default value | description |
+|---|---|---|---|
+| `zephyr_extensions` | bool | false | support for extensions described in [Zephyr docs](https://docs.zephyrproject.org/latest/build/kconfig/extensions.html)
+
 ## Building & Testing
 
 ```sh
