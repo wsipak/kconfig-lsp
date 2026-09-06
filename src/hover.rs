@@ -75,6 +75,7 @@ fn is_word_char(b: u8) -> bool {
 fn def_kind_label(kind: crate::analysis::DefKind) -> &'static str {
     match kind {
         crate::analysis::DefKind::Config => "config",
+        crate::analysis::DefKind::ConfigDefault => "configdefault",
         crate::analysis::DefKind::MenuConfig => "menuconfig",
         crate::analysis::DefKind::Choice => "choice",
     }

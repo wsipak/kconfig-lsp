@@ -11,6 +11,7 @@ use crate::settings::Settings;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DefKind {
     Config,
+    ConfigDefault,
     MenuConfig,
     Choice,
 }
@@ -186,6 +187,21 @@ fn collect_entries(
                     type_kind,
                     prompt,
                     help,
+                    file: file.to_path_buf(),
+                });
+            }
+            Entry::ConfigDefault(c) => {
+                for attr in &c.attributes {
+                    collect_attr_refs(attr, file, refs);
+                }
+
+                defs.push(SymbolDef {
+                    name: c.name.clone(),
+                    kind: DefKind::ConfigDefault,
+                    name_span: c.name_span,
+                    type_kind: None,
+                    prompt: None,
+                    help: None,
                     file: file.to_path_buf(),
                 });
             }
