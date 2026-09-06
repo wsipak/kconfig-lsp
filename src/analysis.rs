@@ -189,6 +189,19 @@ fn collect_entries(
                     file: file.to_path_buf(),
                 });
             }
+            Entry::ConfigDefault(c) => {
+                // configdefault is in fact a reference
+                refs.push(SymbolRef {
+                    name: c.name.clone(),
+                    kind: RefKind::Default,
+                    span: c.name_span,
+                    file: file.to_path_buf(),
+                });
+                // handle references used within configdefault
+                for attr in &c.attributes {
+                    collect_attr_refs(attr, file, refs);
+                }
+            }
             Entry::Choice(ch) => {
                 for attr in &ch.attributes {
                     collect_attr_refs(attr, file, refs);
