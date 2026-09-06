@@ -8,3 +8,4 @@ pub mod lexer;
 pub mod parser;
 pub mod references;
 pub mod server;
+pub mod settings;

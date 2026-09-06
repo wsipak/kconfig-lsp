@@ -1,4 +1,4 @@
-use crate::ast::Span;
+use crate::{ast::Span, settings::Settings};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TokenKind {
@@ -78,14 +78,16 @@ pub struct Lexer<'a> {
     src: &'a str,
     bytes: &'a [u8],
     pos: usize,
+    settings: &'a Settings,
 }
 
 impl<'a> Lexer<'a> {
-    pub fn new(src: &'a str) -> Self {
+    pub fn new(src: &'a str, settings: &'a Settings) -> Self {
         Self {
             src,
             bytes: src.as_bytes(),
             pos: 0,
+            settings,
         }
     }
 
