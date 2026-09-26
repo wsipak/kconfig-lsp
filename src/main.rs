@@ -8,6 +8,7 @@ mod lexer;
 mod parser;
 mod references;
 mod server;
+mod settings;
 
 use tower_lsp::{LspService, Server};
 

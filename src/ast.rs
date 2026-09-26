@@ -76,6 +76,7 @@ pub struct KconfigFile {
 #[derive(Debug, Clone)]
 pub enum Entry {
     Config(ConfigEntry),
+    ConfigDefault(ConfigEntry),
     MenuConfig(ConfigEntry),
     Choice(ChoiceEntry),
     Comment(CommentEntry),

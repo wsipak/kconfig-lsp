@@ -8,6 +8,7 @@ use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer};
 
 use crate::analysis::WorldIndex;
+use crate::settings::Settings;
 use crate::{completion, definition, diagnostics, hover, references};
 
 pub struct Backend {
@@ -20,6 +21,7 @@ pub struct Backend {
     /// by the editor).  Tracked so that `did_close` can restore the on-disk
     /// version instead of dropping the file from the index entirely.
     workspace_files: Mutex<HashSet<PathBuf>>,
+    settings: Mutex<Settings>,
 }
 
 impl Backend {
@@ -30,6 +32,7 @@ impl Backend {
             index: Mutex::new(WorldIndex::new()),
             workspace_root: Mutex::new(None),
             workspace_files: Mutex::new(HashSet::new()),
+            settings: Mutex::new(Default::default()),
         }
     }
 
@@ -71,6 +74,10 @@ impl LanguageServer for Backend {
             *self.workspace_root.lock().unwrap() = Some(root);
         }
 
+        if let Some(ops) = params.initialization_options {
+            *self.settings.lock().unwrap() = Settings::from_json(ops);
+        }
+
         Ok(InitializeResult {
             capabilities: ServerCapabilities {
                 text_document_sync: Some(TextDocumentSyncCapability::Kind(
@@ -94,6 +101,12 @@ impl LanguageServer for Backend {
 
     async fn initialized(&self, _params: InitializedParams) {
         log::info!("kconfig-lsp initialized");
+
+        // Assign settings while keeping the index lock's lifetime constrained.
+        {
+            let mut idx = self.index.lock().unwrap();
+            idx.settings = self.settings.lock().unwrap().clone();
+        }
 
         let root = self.workspace_root.lock().unwrap().clone();
         if let Some(root) = root {

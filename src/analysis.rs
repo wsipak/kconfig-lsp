@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 use crate::ast::*;
 use crate::lexer::Lexer;
 use crate::parser;
+use crate::settings::Settings;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DefKind {
@@ -58,6 +59,7 @@ pub struct WorldIndex {
     pub references: HashMap<String, Vec<SymbolRef>>,
     pub all_symbols: Vec<String>,
     pub files: HashMap<PathBuf, FileAnalysis>,
+    pub settings: Settings,
 }
 
 impl WorldIndex {
@@ -66,7 +68,7 @@ impl WorldIndex {
     }
 
     pub fn analyze_file(&mut self, path: &Path, source: &str) {
-        let tokens = Lexer::new(source).tokenize();
+        let tokens = Lexer::new(source, &self.settings).tokenize();
         let result = parser::parse(source, tokens);
         let line_index = LineIndex::new(source);
 
@@ -186,6 +188,19 @@ fn collect_entries(
                     help,
                     file: file.to_path_buf(),
                 });
+            }
+            Entry::ConfigDefault(c) => {
+                // configdefault is in fact a reference
+                refs.push(SymbolRef {
+                    name: c.name.clone(),
+                    kind: RefKind::Default,
+                    span: c.name_span,
+                    file: file.to_path_buf(),
+                });
+                // handle references used within configdefault
+                for attr in &c.attributes {
+                    collect_attr_refs(attr, file, refs);
+                }
             }
             Entry::Choice(ch) => {
                 for attr in &ch.attributes {

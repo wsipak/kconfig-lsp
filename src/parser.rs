@@ -113,6 +113,7 @@ impl<'a> Parser<'a> {
         match self.peek().clone() {
             TokenKind::Config => Some(self.parse_config(false)),
             TokenKind::MenuConfig => Some(self.parse_config(true)),
+            TokenKind::ConfigDefault => Some(self.parse_configdefault()),
             TokenKind::Choice => Some(self.parse_choice()),
             TokenKind::CommentKw => Some(self.parse_comment()),
             TokenKind::Menu => Some(self.parse_menu()),
@@ -197,6 +198,45 @@ impl<'a> Parser<'a> {
                 _ => break,
             }
         }
+        attrs
+    }
+
+    fn parse_configdefault(&mut self) -> Entry {
+        let start_span = self.current_span();
+        self.pos += 1; // skip `configdefault`
+
+        let (name, name_span) = self.expect_ident();
+        self.expect_newline();
+
+        let attributes = self.parse_configdefault_attributes();
+
+        attributes.iter().for_each(|attr| match attr {
+            Attribute::Default(_) => {}
+            other => self.diag(attr_span(other), "expected default", DiagSeverity::Error),
+        });
+
+        let span = start_span.merge(attributes.last().map(attr_span).unwrap_or(name_span));
+
+        let entry = ConfigEntry {
+            name,
+            name_span,
+            attributes,
+            span,
+        };
+
+        Entry::ConfigDefault(entry)
+    }
+
+    fn parse_configdefault_attributes(&mut self) -> Vec<Attribute> {
+        let mut attrs = Vec::new();
+        loop {
+            self.skip_newlines();
+            match self.peek() {
+                TokenKind::Default => attrs.push(self.parse_default_attr()),
+                _ => break,
+            }
+        }
+
         attrs
     }
 

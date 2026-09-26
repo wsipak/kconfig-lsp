@@ -1,9 +1,10 @@
-use crate::ast::Span;
+use crate::{ast::Span, settings::Settings};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TokenKind {
     // Top-level keywords
     Config,
+    ConfigDefault,
     MenuConfig,
     Choice,
     EndChoice,
@@ -78,14 +79,16 @@ pub struct Lexer<'a> {
     src: &'a str,
     bytes: &'a [u8],
     pos: usize,
+    settings: &'a Settings,
 }
 
 impl<'a> Lexer<'a> {
-    pub fn new(src: &'a str) -> Self {
+    pub fn new(src: &'a str, settings: &'a Settings) -> Self {
         Self {
             src,
             bytes: src.as_bytes(),
             pos: 0,
+            settings,
         }
     }
 
@@ -302,11 +305,51 @@ impl<'a> Lexer<'a> {
             }
         }
         let text = &self.src[start..self.pos];
-        let kind = keyword(text).unwrap_or_else(|| TokenKind::Ident(text.to_string()));
+        let kind = self
+            .keyword(text)
+            .unwrap_or_else(|| TokenKind::Ident(text.to_string()));
         Token {
             kind,
             span: Span::new(start, self.pos),
         }
+    }
+
+    fn keyword(&self, s: &str) -> Option<TokenKind> {
+        Some(match s {
+            "config" => TokenKind::Config,
+            "configdefault" if self.settings.zephyr_extensions => TokenKind::ConfigDefault,
+            "menuconfig" => TokenKind::MenuConfig,
+            "choice" => TokenKind::Choice,
+            "endchoice" => TokenKind::EndChoice,
+            "comment" => TokenKind::CommentKw,
+            "menu" => TokenKind::Menu,
+            "endmenu" => TokenKind::EndMenu,
+            "if" => TokenKind::If,
+            "endif" => TokenKind::EndIf,
+            "source" => TokenKind::Source,
+            "mainmenu" => TokenKind::MainMenu,
+            "bool" => TokenKind::Bool,
+            "tristate" => TokenKind::Tristate,
+            "string" => TokenKind::StringType,
+            "hex" => TokenKind::Hex,
+            "int" => TokenKind::Int,
+            "prompt" => TokenKind::Prompt,
+            "default" => TokenKind::Default,
+            "def_bool" => TokenKind::DefBool,
+            "def_tristate" => TokenKind::DefTristate,
+            "depends" => TokenKind::Depends,
+            "on" => TokenKind::On,
+            "select" => TokenKind::Select,
+            "imply" => TokenKind::Imply,
+            "visible" => TokenKind::Visible,
+            "range" => TokenKind::Range,
+            "help" => TokenKind::Help,
+            "---help---" => TokenKind::Help,
+            "modules" => TokenKind::Modules,
+            "transitional" => TokenKind::Transitional,
+            "optional" => TokenKind::Optional,
+            _ => return None,
+        })
     }
 }
 
@@ -316,41 +359,4 @@ fn is_ident_start(b: u8) -> bool {
 
 fn is_ident_cont(b: u8) -> bool {
     b.is_ascii_alphanumeric() || b == b'_' || b == b'-'
-}
-
-fn keyword(s: &str) -> Option<TokenKind> {
-    Some(match s {
-        "config" => TokenKind::Config,
-        "menuconfig" => TokenKind::MenuConfig,
-        "choice" => TokenKind::Choice,
-        "endchoice" => TokenKind::EndChoice,
-        "comment" => TokenKind::CommentKw,
-        "menu" => TokenKind::Menu,
-        "endmenu" => TokenKind::EndMenu,
-        "if" => TokenKind::If,
-        "endif" => TokenKind::EndIf,
-        "source" => TokenKind::Source,
-        "mainmenu" => TokenKind::MainMenu,
-        "bool" => TokenKind::Bool,
-        "tristate" => TokenKind::Tristate,
-        "string" => TokenKind::StringType,
-        "hex" => TokenKind::Hex,
-        "int" => TokenKind::Int,
-        "prompt" => TokenKind::Prompt,
-        "default" => TokenKind::Default,
-        "def_bool" => TokenKind::DefBool,
-        "def_tristate" => TokenKind::DefTristate,
-        "depends" => TokenKind::Depends,
-        "on" => TokenKind::On,
-        "select" => TokenKind::Select,
-        "imply" => TokenKind::Imply,
-        "visible" => TokenKind::Visible,
-        "range" => TokenKind::Range,
-        "help" => TokenKind::Help,
-        "---help---" => TokenKind::Help,
-        "modules" => TokenKind::Modules,
-        "transitional" => TokenKind::Transitional,
-        "optional" => TokenKind::Optional,
-        _ => return None,
-    })
 }
